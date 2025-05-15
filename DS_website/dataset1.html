@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV Patient Data Validator</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <style>
+      body{
+          font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+          line-height:1.6;
+          color:#333;
+          max-width:1200px;
+          margin:0 auto;
+          padding:20px;
+          background-color:#f7f9fc;
+      }
+      h1{
+          text-align:center;
+          color:#2c3e50;
+          margin-bottom:30px;
+      }
+      .file-upload,.stats,.table-container{
+          background:#fff;
+          border-radius:8px;
+          box-shadow:0 4px 8px rgba(0,0,0,.1);
+          padding:30px;
+          margin-bottom:30px;
+      }
+      .file-upload{text-align:center;}
+      .file-input{display:none;}
+      .file-label{
+          background:#3498db;
+          color:#fff;
+          padding:12px 24px;
+          border-radius:5px;
+          cursor:pointer;
+          display:inline-block;
+          transition:background-color .3s;
+      }
+      .file-label:hover{background:#2980b9;}
+      .file-name{margin-top:10px;font-size:14px;color:#666;}
+      .error{color:#e74c3c;margin-top:10px;text-align:center;}
+
+      .stats{display:none;}
+      .stats h2{margin-top:0;color:#2c3e50;}
+      .stat-row{
+          display:flex;
+          justify-content:space-between;
+          margin-bottom:10px;
+          padding-bottom:10px;
+          border-bottom:1px solid #eee;
+      }
+
+      .table-container{overflow-x:auto;display:none;}
+      table{width:100%;border-collapse:collapse;}
+      th,td{
+          padding:12px 15px;
+          text-align:left;
+          border-bottom:1px solid #e1e1e1;
+      }
+      th{
+          background:#f4f7f9;
+          color:#2c3e50;
+          font-weight:600;
+          position:sticky;
+          top:0;
+      }
+      tr:hover{background:#f9f9f9;}
+
+      .validation-info{
+          background:#f8f9fa;
+          border-left:4px solid #3498db;
+          padding:15px;
+          margin-bottom:20px;
+          border-radius:0 4px 4px 0;
+      }
+      .validation-info h3{margin-top:0;color:#2c3e50;}
+      .validation-info ul{margin-bottom:0;padding-left:20px;}
+      .validation-info li{margin-bottom:8px;}
+
+      .predict-btn{
+          background:#29b661;
+          color:#fff;
+          padding:12px 24px;
+          border:none;
+          border-radius:5px;
+          cursor:pointer;
+          font-size:16px;
+          display:none;
+          transition:background-color .3s;
+      }
+      .predict-btn:hover{background:#1f8d4c;}
+  </style>
+</head>
+
+<body>
+  <h1>Patient Data CSV Validator</h1>
+
+  <div class="file-upload">
+      <h2>Upload CSV File</h2>
+
+      <div class="file-input-wrapper">
+          <label for="csv-file" class="file-label">Choose File</label>
+          <input type="file" id="csv-file" class="file-input" accept=".csv">
+          <div class="file-name" id="file-name">No file selected</div>
+      </div>
+
+      <p class="error" id="error-message"></p>
+      <button id="predict-btn" class="predict-btn">Predict Cancer Risk</button>
+  </div>
+
+  <div class="stats" id="stats">
+      <h2>Data Summary</h2>
+      <div class="stat-row"><div>Total rows in CSV:</div><div id="total-rows">0</div></div>
+      <div class="stat-row"><div>Valid rows:</div><div id="valid-rows">0</div></div>
+      <div class="stat-row"><div>Deleted rows:</div><div id="deleted-rows">0</div></div>
+  </div>
+
+  <div class="table-container" id="table-container">
+      <h2>Validated Patient Data</h2>
+      <table id="data-table">
+          <thead>
+              <tr>
+                  <th>Age</th><th>Gender</th><th>BMI</th><th>Smoking</th>
+                  <th>Genetic Risk</th><th>Physical Activity</th>
+                  <th>Alcohol Intake</th><th>Cancer History</th>
+              </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+      </table>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const fileInput        = document.getElementById('csv-file');
+      const fileNameDisplay  = document.getElementById('file-name');
+      const errorMessage     = document.getElementById('error-message');
+      const tableContainer   = document.getElementById('table-container');
+      const tableBody        = document.getElementById('table-body');
+      const statsContainer   = document.getElementById('stats');
+      const totalRowsElement = document.getElementById('total-rows');
+      const validRowsElement = document.getElementById('valid-rows');
+      const deletedRowsElement = document.getElementById('deleted-rows');
+      const predictBtn       = document.getElementById('predict-btn');
+
+      let validRows = [];
+
+      fileInput.addEventListener('change', e => {
+          const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+          fileNameDisplay.textContent = fileName;
+
+          if (e.target.files[0]) parseCSV(e.target.files[0]);
+      });
+
+      function parseCSV(file) {
+          errorMessage.textContent = '';
+
+          Papa.parse(file, {
+              header: true,
+              skipEmptyLines: true,
+              dynamicTyping: true,
+              complete: results => {
+                  if (results.errors.length) {
+                      errorMessage.textContent = `Error parsing CSV: ${results.errors[0].message}`;
+                      return;
+                  }
+                  if (results.data.length === 0) {
+                      errorMessage.textContent = 'The CSV file appears to be empty.';
+                      return;
+                  }
+                  validateAndDisplayData(results.data);
+              },
+              error: err => {
+                  errorMessage.textContent = `Error reading file: ${err.message}`;
+              }
+          });
+      }
+
+      function validateAndDisplayData(data) {
+          const requiredHeaders = [
+              'Age','Gender','BMI','Smoking','GeneticRisk',
+              'PhysicalActivity','AlcoholIntake','CancerHistory'
+          ];
+
+          const headers = Object.keys(data[0]);
+          const missing = requiredHeaders.filter(
+              h => !headers.some(k => k.toLowerCase() === h.toLowerCase())
+          );
+          if (missing.length) {
+              errorMessage.textContent = `Missing required headers: ${missing.join(', ')}`;
+              return;
+          }
+
+          const headerMap = {};
+          headers.forEach(h => {
+              const norm = requiredHeaders.find(r => r.toLowerCase() === h.toLowerCase());
+              if (norm) headerMap[h] = norm;
+          });
+
+          const invalidRows = [];
+          validRows = [];
+
+          data.forEach((row, i) => {
+              const normRow = {};
+              Object.keys(row).forEach(k => {
+                  if (headerMap[k]) normRow[headerMap[k]] = row[k];
+              });
+              if (isValidRow(normRow)) validRows.push(normRow);
+              else invalidRows.push({ index: i+2, row: normRow });
+          });
+
+          totalRowsElement.textContent   = data.length;
+          validRowsElement.textContent   = validRows.length;
+          deletedRowsElement.textContent = invalidRows.length;
+          statsContainer.style.display   = 'block';
+
+          displayValidData(validRows);
+          tableContainer.style.display   = validRows.length ? 'block' : 'none';
+
+          if (invalidRows.length) {
+              errorMessage.textContent = `${invalidRows.length} row${invalidRows.length !== 1 ? 's' : ''} deleted due to validation failures.`;
+          } else {
+              errorMessage.textContent = 'All rows passed validation!';
+          }
+
+          predictBtn.style.display = validRows.length ? 'inline-block' : 'none';
+      }
+
+      function isValidRow(r) {
+          if (!Number.isInteger(r.Age)                 || r.Age < 20 || r.Age > 80) return false;
+          if (![0,1].includes(r.Gender))                                            return false;
+          if (typeof r.BMI                !== 'number' || r.BMI < 15 || r.BMI > 40) return false;
+          if (![0,1].includes(r.Smoking))                                          return false;
+          if (![0,1,2].includes(r.GeneticRisk))                                     return false;
+          if (typeof r.PhysicalActivity    !== 'number' || r.PhysicalActivity < 0 || r.PhysicalActivity > 10) return false;
+          if (typeof r.AlcoholIntake       !== 'number' || r.AlcoholIntake  < 0 || r.AlcoholIntake  > 5)  return false;
+          if (![0,1].includes(r.CancerHistory))                                     return false;
+          return true;
+      }
+
+      function displayValidData(rows) {
+          tableBody.innerHTML = '';
+          rows.forEach(r => {
+              const tr = document.createElement('tr');
+              appendCell(tr, r.Age);
+              appendCell(tr, r.Gender === 0 ? 'Male' : 'Female');
+              appendCell(tr, r.BMI.toFixed(1));
+              appendCell(tr, r.Smoking ? 'Yes' : 'No');
+              appendCell(tr, ['Low','Medium','High'][r.GeneticRisk] ?? 'Unknown');
+              appendCell(tr, `${r.PhysicalActivity.toFixed(1)} hrs/week`);
+              appendCell(tr, `${r.AlcoholIntake.toFixed(1)} units/week`);
+              appendCell(tr, r.CancerHistory ? 'Yes' : 'No');
+              tableBody.appendChild(tr);
+          });
+      }
+      function appendCell(tr,v){const td=document.createElement('td');td.textContent=v;tr.appendChild(td);}
+
+predictBtn.addEventListener('click', async () => {
+
+    const previewWin = window.open('', '_blank');
+
+    try {
+        predictBtn.disabled  = true;
+        predictBtn.textContent = 'Predicting…';
+
+        const res = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(validRows)
+        });
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+        const preds = await res.json();
+        showResultsPage(previewWin, preds);
+
+    } catch (err) {
+        previewWin.close();
+        alert(`Prediction failed: ${err.message}`);
+    } finally {
+        predictBtn.disabled  = false;
+        predictBtn.textContent = 'Predict Cancer Risk';
+    }
+});
+
+function showResultsPage(win, rows) {
+    const head = `
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cancer Risk Predictions</title>
+        <style>
+          body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;max-width:1200px;margin:auto;padding:20px;background:#f7f9fc;color:#333;}
+          h1{text-align:center;color:#2c3e50}
+          table{width:100%;border-collapse:collapse;margin-top:30px;}
+          th,td{padding:12px 15px;border-bottom:1px solid #e1e1e1;text-align:left;}
+          th{background:#f4f7f9;font-weight:600;position:sticky;top:0;}
+          tr:hover{background:#f9f9f9;}
+          .prob{font-weight:bold;}
+          .high{color:#e74c3c;}
+          .low {color:#27ae60;}
+        </style>
+      </head>`;
+
+    const bodyStart = `<body><h1>Cancer Risk Predictions</h1>
+       <table><thead><tr>
+       <th>Age</th><th>Gender</th><th>BMI</th><th>Smoking</th><th>Genetic Risk</th>
+       <th>Physical Activity</th><th>Alcohol Intake</th><th>Cancer History</th>
+       <th>Probability</th><th>Prediction</th></tr></thead><tbody>`;
+
+    const bodyRows = rows.map(r => `
+       <tr>
+         <td>${r.Age}</td>
+         <td>${r.Gender}</td>
+         <td>${parseFloat(r.BMI).toFixed(1)}</td>
+         <td>${r.Smoking}</td>
+         <td>${r['Genetic Risk']}</td>
+         <td>${parseFloat(r['Physical Activity']).toFixed(1)}</td>
+         <td>${parseFloat(r['Alcohol Intake']).toFixed(1)}</td>
+         <td>${r['Cancer History']}</td>
+         <td class="prob">${(r.Cancer_Probability*100).toFixed(1)}%</td>
+         <td class="${r.Cancer_Prediction ? 'high':'low'}">
+             ${r.Cancer_Prediction ? 'High' : 'Low'}
+         </td></tr>`).join('');
+
+    const bodyEnd = '</tbody></table></body>';
+
+    win.document.write(`<!DOCTYPE html><html lang="en">${head}${bodyStart}${bodyRows}${bodyEnd}</html>`);
+    win.document.close();
+}
+
+
+  });
+  </script>
+</body>
+</html>

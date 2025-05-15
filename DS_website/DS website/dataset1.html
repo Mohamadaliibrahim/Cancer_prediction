@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Patient Data Validator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .file-input-wrapper {
+            margin: 20px 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+
+        .file-label:hover {
+            background-color: #2980b9;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stats {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .stats h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        th {
+            background-color: #f4f7f9;
+            color: #2c3e50;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .validation-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .validation-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .validation-info ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .validation-info li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+ <h1>Patient Data CSV Validator</h1>
+    <div class="file-upload">
+        <h2>Upload CSV File</h2>
+        <div class="file-input-wrapper">
+            <label for="csv-file" class="file-label">Choose File</label>
+            <input type="file" id="csv-file" class="file-input" accept=".csv">
+            <div class="file-name" id="file-name">No file selected</div>
+        </div>
+        <p class="error" id="error-message"></p>
+    </div>
+
+    <div class="stats" id="stats">
+        <h2>Data Summary</h2>
+        <div class="stat-row">
+            <div>Total rows in CSV:</div>
+            <div id="total-rows">0</div>
+        </div>
+        <div class="stat-row">
+            <div>Valid rows:</div>
+            <div id="valid-rows">0</div>
+        </div>
+        <div class="stat-row">
+            <div>Deleted rows:</div>
+            <div id="deleted-rows">0</div>
+        </div>
+    </div>
+
+    <div class="table-container" id="table-container">
+        <h2>Validated Patient Data</h2>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>BMI</th>
+                    <th>Smoking</th>
+                    <th>Genetic Risk</th>
+                    <th>Physical Activity</th>
+                    <th>Alcohol Intake</th>
+                    <th>Cancer History</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('csv-file');
+            const fileNameDisplay = document.getElementById('file-name');
+            const errorMessage = document.getElementById('error-message');
+            const tableContainer = document.getElementById('table-container');
+            const tableBody = document.getElementById('table-body');
+            const statsContainer = document.getElementById('stats');
+            const totalRowsElement = document.getElementById('total-rows');
+            const validRowsElement = document.getElementById('valid-rows');
+            const deletedRowsElement = document.getElementById('deleted-rows');
+
+            // Update file name display when a file is selected
+            fileInput.addEventListener('change', function(e) {
+                const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+                fileNameDisplay.textContent = fileName;
+                
+                if (e.target.files[0]) {
+                    parseCSV(e.target.files[0]);
+                }
+            });
+
+            function parseCSV(file) {
+                errorMessage.textContent = '';
+                
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        if (results.errors.length > 0) {
+                            errorMessage.textContent = `Error parsing CSV: ${results.errors[0].message}`;
+                            return;
+                        }
+                        
+                        const data = results.data;
+                        if (data.length === 0) {
+                            errorMessage.textContent = 'The CSV file appears to be empty.';
+                            return;
+                        }
+
+                        validateAndDisplayData(data);
+                    },
+                    error: function(error) {
+                        errorMessage.textContent = `Error reading file: ${error.message}`;
+                    }
+                });
+            }
+
+            function validateAndDisplayData(data) {
+                // Check for required headers
+                const requiredHeaders = ['Age', 'Gender', 'BMI', 'Smoking', 'GeneticRisk', 
+                                        'PhysicalActivity', 'AlcoholIntake', 'CancerHistory'];
+                
+                const headers = Object.keys(data[0]);
+                const missingHeaders = requiredHeaders.filter(header => 
+                    !headers.some(h => h.toLowerCase() === header.toLowerCase())
+                );
+
+                if (missingHeaders.length > 0) {
+                    errorMessage.textContent = `Missing required headers: ${missingHeaders.join(', ')}`;
+                    return;
+                }
+
+                // Normalize header case for consistent access
+                const headerMap = {};
+                headers.forEach(header => {
+                    const normalizedHeader = requiredHeaders.find(
+                        h => h.toLowerCase() === header.toLowerCase()
+                    );
+                    if (normalizedHeader) {
+                        headerMap[header] = normalizedHeader;
+                    }
+                });
+
+                // Validate each row according to the rules
+                const totalRows = data.length;
+                const validRows = [];
+                const invalidRows = [];
+
+                data.forEach((row, index) => {
+                    // Normalize data for validation
+                    const normalizedRow = {};
+                    Object.keys(row).forEach(key => {
+                        if (headerMap[key]) {
+                            normalizedRow[headerMap[key]] = row[key];
+                        }
+                    });
+
+                    if (isValidRow(normalizedRow)) {
+                        validRows.push(normalizedRow);
+                    } else {
+                        invalidRows.push({row: normalizedRow, index: index + 2}); // +2 for 1-based indexing and header row
+                    }
+                });
+
+                // Display statistics
+                totalRowsElement.textContent = totalRows;
+                validRowsElement.textContent = validRows.length;
+                deletedRowsElement.textContent = invalidRows.length;
+                statsContainer.style.display = 'block';
+
+                // Display valid data in the table
+                displayValidData(validRows);
+                
+                // Show table only if we have valid data
+                tableContainer.style.display = validRows.length > 0 ? 'block' : 'none';
+                
+                // Show message about deleted rows if any
+                if (invalidRows.length > 0) {
+                    const deletedMessage = `${invalidRows.length} row${invalidRows.length !== 1 ? 's' : ''} deleted due to validation failures.`;
+                    if (validRows.length === 0) {
+                        errorMessage.textContent = `All rows failed validation. ${deletedMessage}`;
+                    } else {
+                        errorMessage.textContent = deletedMessage;
+                    }
+                } else {
+                    errorMessage.textContent = 'All rows passed validation!';
+                }
+            }
+
+            function isValidRow(row) {
+                // Age validation (integer between 20 and 80)
+                if (!Number.isInteger(row.Age) || row.Age < 20 || row.Age > 80) {
+                    return false;
+                }
+                
+                // Gender validation (0 or 1)
+                if (row.Gender !== 0 && row.Gender !== 1) {
+                    return false;
+                }
+                
+                // BMI validation (number between 15 and 40)
+                if (typeof row.BMI !== 'number' || row.BMI < 15 || row.BMI > 40) {
+                    return false;
+                }
+                
+                // Smoking validation (0 or 1)
+                if (row.Smoking !== 0 && row.Smoking !== 1) {
+                    return false;
+                }
+                
+                // GeneticRisk validation (0, 1, or 2)
+                if (row.GeneticRisk !== 0 && row.GeneticRisk !== 1 && row.GeneticRisk !== 2) {
+                    return false;
+                }
+                
+                // PhysicalActivity validation (number between 0 and 10)
+                if (typeof row.PhysicalActivity !== 'number' || 
+                    row.PhysicalActivity < 0 || row.PhysicalActivity > 10) {
+                    return false;
+                }
+                
+                // AlcoholIntake validation (number between 0 and 5)
+                if (typeof row.AlcoholIntake !== 'number' || 
+                    row.AlcoholIntake < 0 || row.AlcoholIntake > 5) {
+                    return false;
+                }
+                
+                // CancerHistory validation (0 or 1)
+                if (row.CancerHistory !== 0 && row.CancerHistory !== 1) {
+                    return false;
+                }
+                
+                return true;
+            }
+
+            function displayValidData(validRows) {
+                // Clear existing table data
+                tableBody.innerHTML = '';
+                
+                // Add each valid row to the table
+                validRows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    // Age
+                    appendCell(tr, row.Age);
+                    
+                    // Gender (0 = Male, 1 = Female)
+                    appendCell(tr, row.Gender === 0 ? 'Male' : 'Female');
+                    
+                    // BMI (show with 1 decimal place)
+                    appendCell(tr, parseFloat(row.BMI).toFixed(1));
+                    
+                    // Smoking (0 = No, 1 = Yes)
+                    appendCell(tr, row.Smoking === 0 ? 'No' : 'Yes');
+                    
+                    // GeneticRisk (0 = Low, 1 = Medium, 2 = High)
+                    let riskText = 'Unknown';
+                    if (row.GeneticRisk === 0) riskText = 'Low';
+                    else if (row.GeneticRisk === 1) riskText = 'Medium';
+                    else if (row.GeneticRisk === 2) riskText = 'High';
+                    appendCell(tr, riskText);
+                    
+                    // PhysicalActivity (hours per week, show with 1 decimal place)
+                    appendCell(tr, parseFloat(row.PhysicalActivity).toFixed(1) + ' hrs/week');
+                    
+                    // AlcoholIntake (units per week, show with 1 decimal place)
+                    appendCell(tr, parseFloat(row.AlcoholIntake).toFixed(1) + ' units/week');
+                    
+                    // CancerHistory (0 = No, 1 = Yes)
+                    appendCell(tr, row.CancerHistory === 0 ? 'No' : 'Yes');
+                    
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            function appendCell(tr, value) {
+                const td = document.createElement('td');
+                td.textContent = value;
+                tr.appendChild(td);
+            }
+        });
+    </script>
+</body>
+</html>

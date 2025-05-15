@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthDx - Advanced Healthcare Analytics</title>
+    <meta name="description" content="HealthDx provides healthcare professionals with powerful data analytics tools for improved cancer diagnosis and patient outcomes.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Urbanist', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        /* Header styles */
+        header {
+            background-color: #002bff;
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 2rem;
+        }
+        
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* Hero section */
+        .hero {
+            background: linear-gradient(rgba(0, 43, 255, 0.7), rgba(0, 43, 255, 0.7)), 
+                        url('https://images.unsplash.com/photo-1650897492432-c19a4a4a85bc') center/cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding-top: 80px;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: white;
+            color: #002bff;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-family: 'Urbanist', sans-serif;
+        }
+        
+        .btn:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-3px);
+        }
+        
+        /* Features section */
+        .features {
+            padding: 5rem 2rem;
+            background-color: #f9f9f9;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: #002bff;
+        }
+        
+        .section-title p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #002bff;
+            color: white;
+            border-radius: 50%;
+            font-size: 2rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #002bff;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .login-modal {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .modal-overlay.active .login-modal {
+            transform: translateY(0);
+        }
+        
+        .login-modal h2 {
+            color: #002bff;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Urbanist', sans-serif;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #002bff;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #002bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .login-btn:hover {
+            background-color: #001fcc;
+        }
+        
+        .secondary-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: transparent;
+            color: #002bff;
+            border: 1px solid #002bff;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #f0f5ff;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .error-message {
+            color: red;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            nav ul {
+                display: none;
+            }
+            
+            .login-modal {
+                width: 90%;
+                padding: 1.5rem;
+            }
+        }
+
+    nav button {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    font-family: 'Urbanist', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-left: 1rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+    nav button:hover {
+    background-color: white;
+    color: #002bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+    nav button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+
+@media (max-width: 768px) {
+    nav button {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+}
+    </style>   
+</head>
+
+<body>
+    <header>
+        <div class="nav-container">
+            <h1>Cancer Detection Platform</h1>
+            <div class="logo">HealthDx</div>
+            <nav>
+                <button onclick="window.location.href='aboutus.html'">About Us</button>
+                <button onclick="window.location.href='contactus.html'">Contact Us</button>
+            </nav>
+        </div>
+    </header>
+    
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Welcome to HealthDx</h1>
+            <p>Empowering healthcare professionals with advanced data analytics to enhance cancer diagnosis and patient outcomes.</p>
+            <button onclick="showLoginModal()" class="btn">Login</button>
+        </div>
+    </section>
+    
+    <section class="features">
+        <div class="section-title">
+            <h2>Key Features of HealthDx</h2>
+            <p>Discover the innovative tools that set HealthDx apart in the healthcare analytics landscape.</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Robust Data Analysis</h3>
+                <p>Our platform provides comprehensive data analysis capabilities, enabling users to sift through vast amounts of information to uncover critical insights for cancer diagnosis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Secure Authentication</h3>
+                <p>HealthDx prioritizes security with robust user authentication protocols to ensure privacy and compliance with healthcare regulations.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⏱️</div>
+                <h3>Real-Time Reporting</h3>
+                <p>Stay updated with real-time reporting features that allow healthcare professionals to monitor patient data and model performance continuously.</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-modal">
+            <button class="close-modal" onclick="hideLoginModal()">&times;</button>
+            <h2>Login to HealthDx</h2>
+            <form id="loginForm">
+                <div id="loginError" class="error-message"></div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login</button>
+                <! -- button type="button" onclick="showRegisterModal()" class="secondary-btn" Create Account /button -->
+            </form>
+        </div>
+    </div>
+    
+    <!-- Registration Modal -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="login-modal>
+            <button class="close-modal" onclick="hideRegisterModal()">&times;</button>
+            <h2>Create Account</h2>
+            <form id="registerForm">
+                <div id="registerError" class="error-message"></div>
+                <div class="form-group">
+                    <label for="newUsername">Username</label>
+                    <input type="text" id="newUsername" name="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password</label>
+                    <input type="password" id="newPassword" name="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                </div>
+                <button type="submit" class="login-btn">Register</button>
+                <button type="button" onclick="showLoginModal()" class="secondary-btn">Already have an account? Login</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Store users in localStorage (for demo purposes)
+        // In a real app, you would use a database
+        let users = JSON.parse(localStorage.getItem('healthdx_users')) || {
+            'doctor': { password: 'health123' },
+            'admin': { password: 'secure456' }
+        };
+
+        // Save users to localStorage
+        function saveUsers() {
+            localStorage.setItem('healthdx_users', JSON.stringify(users));
+        }
+
+        // Login Modal Functions
+        function showLoginModal() {
+            hideRegisterModal();
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('username').focus();
+        }
+        
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('loginForm').reset();
+        }
+        
+        // Registration functions
+        function showRegisterModal() {
+            hideLoginModal();
+            document.getElementById('registerModal').classList.add('active');
+            document.getElementById('newUsername').focus();
+        }
+        
+        function hideRegisterModal() {
+            document.getElementById('registerModal').classList.remove('active');
+            document.getElementById('registerError').textContent = '';
+            document.getElementById('registerForm').reset();
+        }
+        
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('loginError');
+            
+            if (!username || !password) {
+                errorElement.textContent = "Please enter both username and password.";
+                return;
+            }
+            
+            // Check credentials
+            if (users[username] && users[username].password === password) {
+                errorElement.textContent = "";
+                alert("Login successful! Redirecting to login page...");
+                hideLoginModal();
+                window.location.href = "login.html"; // Redirect to login.html
+            } else {
+                errorElement.textContent = "Invalid username or password";
+            }
+        });
+        
+        // Handle registration
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorElement = document.getElementById('registerError');
+            
+            // Validation
+            if (!username || !password || !confirmPassword) {
+                errorElement.textContent = "Please fill in all fields.";
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorElement.textContent = "Passwords don't match.";
+                return;
+            }
+            
+            if (users[username]) {
+                errorElement.textContent = "Username already exists.";
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorElement.textContent = "Password must be at least 6 characters.";
+                return;
+            }
+            
+            // Create new user
+            users[username] = { password: password };
+            saveUsers();
+            
+            errorElement.textContent = "";
+            alert("Account created successfully! You can now login.");
+            hideRegisterModal();
+            showLoginModal();
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLoginModal();
+            }
+        });
+        
+        document.getElementById('registerModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideRegisterModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideLoginModal();
+                hideRegisterModal();
+            }
+        });
+        
+        // Simple JavaScript for mobile menu toggle (would be expanded in full implementation)
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('HealthDx platform loaded');
+            
+            // Analytics tracking would go here
+            if (typeof ga !== 'undefined') {
+                ga('send', 'pageview');
+            }
+        });
+    </script>
+</body>
+</html>
+ 
